@@ -82,8 +82,8 @@ while True:
             print(encoded_image.decode('utf-8')[:100])
             print(len(buf))
         except Exception as e:
-            builtinled.value(0)
-            sleep(3)
+            for _ in range(3): #beep three times each 1 second if reach exception
+                beep(1)
             print("reached exception")
             print("Exception:", str(e))
         finally:
