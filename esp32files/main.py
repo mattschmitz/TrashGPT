@@ -28,12 +28,20 @@ def CheckPressed(pin):
   takepic = True
   global interrupt_pin
   interrupt_pin = pin
-
-def TakePicture():
+  
+def InitializeCamera():
     try:
         camera.init(0, format=camera.JPEG)
         camera.framesize(camera.FRAME_96X96)
         camera.quality(63)
+    except Exception as e:
+        for _ in range(3):
+            beep(1)
+        print("reached exception")
+        print("Exception:", str(e))
+
+def TakePicture():
+    try:
         floodlight.value(1)
         buf = camera.capture()
         PlayShutterSound()
@@ -42,13 +50,10 @@ def TakePicture():
         print(encoded_image.decode('utf-8')[:100])
         print(len(buf))
     except Exception as e:
-        builtinled.value(0)
-        sleep(3)
+        for _ in range(3):
+            beep(1)
         print("reached exception")
         print("Exception:", str(e))
-    finally:
-        camera.deinit()
-        takepic = False #reset
 
 # Attach interrupt
 shutterbutton.irq(trigger=Pin.IRQ_FALLING, handler=CheckPressed)
@@ -62,6 +67,9 @@ buzzer = PWM(Pin(12))
 buzzer.duty(0)
 buzzer.freq(1000)
 
+# Initialize Cam
+InitializeCamera()
+
 # If hear three beep then good to go.
 for _ in range(3):
     beep()
@@ -70,23 +78,6 @@ print("loop we go!") #dev purposes
 
 while True:
     if takepic:
-        try:
-            camera.init(0, format=camera.JPEG)
-            camera.framesize(camera.FRAME_96X96)
-            camera.quality(63)
-            floodlight.value(1)
-            buf = camera.capture()
-            PlayShutterSound()
-            floodlight.value(0)
-            encoded_image = base64.b64encode(buf)
-            print(encoded_image.decode('utf-8')[:100])
-            print(len(buf))
-        except Exception as e:
-            for _ in range(3): #beep three times each 1 second if reach exception
-                beep(1)
-            print("reached exception")
-            print("Exception:", str(e))
-        finally:
-            camera.deinit()
-            takepic = False #reset
+        TakePicture()
+        takepic = False #reset
 
