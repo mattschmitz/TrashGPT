@@ -1,4 +1,4 @@
-import requests
+# import requests
 
 # Replace 'your_api_key_here' with your actual OpenAI API key
 api_key = ''
@@ -13,11 +13,15 @@ data = {'model': 'gpt-3.5-turbo','messages': [
 from machine import Pin
 from time import sleep
 
-pushbutton = Pin(8, Pin.IN, Pin.PULL_UP)
+pushbutton = Pin(0, Pin.IN, Pin.PULL_UP)
+builtinled = Pin(33, Pin.OUT)
 
 while True:
     print(pushbutton.value())
     if pushbutton.value() == 0:
-        response = requests.get("https://catfact.ninja/fact")
-        print("Response: " + str(response.content))
-    sleep(1);
+        builtinled.value(1)
+#         response = requests.get("https://catfact.ninja/fact")
+#         print("Response: " + str(response.content))
+    else:
+        builtinled.value(0)
+    sleep(1)
