@@ -46,23 +46,27 @@ def InitializeCamera():
 def DeinitCamera():
     camera.deinit()
 
-def GetDecodedImage():
+def GetEncodedImage(image):
+    encodedImage = base64.b64encode(image)
+    return encodedImage
+
+def GetDecodedImage(encoded_image):
+    decodedImage = encoded_image.decode('utf-8')
+    return decodedImage
+
+def TakePicture():
     print("Taking Photo")
     try:
         floodlight.value(1)
         buf = camera.capture()
         PlayShutterSound()
         floodlight.value(0)
-        encoded_image = base64.b64encode(buf)
-        decoded_image = encoded_image.decode('utf-8')
-        print(decoded_image)
-        print(len(buf))
     except Exception as e:
         for _ in range(3):
             beep(1)
         print("reached exception")
         print("Exception:", str(e))
-    return decoded_image
+    return buf
 
 def ConnectWifi():
     import network
@@ -95,7 +99,8 @@ for _ in range(3):
     beep()
 
 ConnectWifi()
-decodedImage = GetDecodedImage()
+image = TakePicture()
+decodedImage = GetDecodedImage(GetEncodedImage(image))
 DeinitCamera()
 response = api.CallApi(decodedImage)
 print(response)

@@ -16,7 +16,6 @@ headers = {
 # Make the POST request
 def CallApi(decodedImage):
     try:
-        print("line1")
         data_with_image = {
             "model": 'gpt-4-vision-preview',
             'messages': [
