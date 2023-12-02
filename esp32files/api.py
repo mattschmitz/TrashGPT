@@ -9,10 +9,12 @@ headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {OPENAI_API_KEY}"
 }
-        
+
+# IMPORTANT!!!    
+# GPT-4 does not take encoded image, it takes an encoded image that is already decoded to utf-8 format
 
 # Make the POST request
-def CallApi(encodedImage):
+def CallApi(decodedImage):
     try:
         print("line1")
         data_with_image = {
@@ -26,7 +28,7 @@ def CallApi(encodedImage):
                 },
                 {'role': 'user', 'content': [
                     {'type': 'text', 'text': "What type of trash is this?"},
-                    {'type': "image_url", 'image_url': {'url': f"data:image/jpeg;base64,{encodedImage}"}}
+                    {'type': "image_url", 'image_url': {'url': f"data:image/jpeg;base64,{decodedImage}"}}
                 ]
                 }
             ]

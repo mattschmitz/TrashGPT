@@ -97,10 +97,8 @@ for _ in range(3):
 ConnectWifi()
 decodedImage = GetDecodedImage()
 DeinitCamera()
-
 response = api.CallApi(decodedImage)
 print(response)
-takepic = False #reset
 
 # print("loop we go!") #dev purposes
 # 
