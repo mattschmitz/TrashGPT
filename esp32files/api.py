@@ -38,3 +38,16 @@ def CallApi(decodedImage):
         print(str(e))
         return
     return ("Response: " + str(response.content))
+
+def TrimResponse(resp):
+    # Convert bytes to string if necessary
+    if isinstance(resp, bytes):
+        resp = resp.decode('utf-8')
+
+    # Parse the JSON data
+    parsedData = json.loads(resp)
+
+    # Navigate through the JSON structure to find the desired data
+    trimmedResponse = parsedData["choices"][0]["message"]["content"]
+
+    return trimmedResponse
