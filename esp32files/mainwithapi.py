@@ -61,6 +61,7 @@ def TakePicture():
         buf = camera.capture()
         PlayShutterSound()
         floodlight.value(0)
+        print("Done")
     except Exception as e:
         for _ in range(3):
             beep(1)
@@ -69,7 +70,6 @@ def TakePicture():
     return buf
 
 def ConnectWifi():
-    import network
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected():
         print('connecting to network...')
@@ -103,7 +103,8 @@ image = TakePicture()
 decodedImage = GetDecodedImage(GetEncodedImage(image))
 DeinitCamera()
 response = api.CallApi(decodedImage)
-print(response)
+trimmedResponse = api.TrimResponse(response)
+print(trimmedResponse)
 
 # print("loop we go!") #dev purposes
 # 
@@ -113,3 +114,4 @@ print(response)
 #         response = api.CallApi(encodedImage)
 #         print(response)
 #         takepic = False #reset
+
