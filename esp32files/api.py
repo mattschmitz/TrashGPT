@@ -37,17 +37,22 @@ def CallApi(decodedImage):
         print("Reached Exception in CallApi()")
         print(str(e))
         return
-    return ("Response: " + str(response.content))
+    return response.content
 
 def TrimResponse(resp):
-    # Convert bytes to string if necessary
-    if isinstance(resp, bytes):
-        resp = resp.decode('utf-8')
+    try:
+        # Decode the byte string to a regular string
+        if isinstance(resp, bytes):
+            resp = resp.decode('utf-8')
 
-    # Parse the JSON data
-    parsedData = json.loads(resp)
+        # Parse the JSON data
+        parsed_data = json.loads(resp)
 
-    # Navigate through the JSON structure to find the desired data
-    trimmedResponse = parsedData["choices"][0]["message"]["content"]
+        # Navigate through the JSON structure to find the desired data
+        message_content = parsed_data["choices"][0]["message"]["content"]
 
-    return trimmedResponse
+        return message_content
+    
+    except ValueError as e:
+        print("Error parsing JSON:", e)
+        return None
