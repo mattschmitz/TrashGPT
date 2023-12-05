@@ -1,5 +1,6 @@
 import camera
 import base64
+import ledcontroller as led
 from machine import Pin, PWM
 from time import sleep
 import api
@@ -9,7 +10,6 @@ import gc
 
 floodlight = Pin(4, Pin.OUT)
 shutterbutton = Pin(13, Pin.IN, Pin.PULL_UP)
-builtinled = Pin(33, Pin.OUT)
 
 takepic = False
 
@@ -20,6 +20,15 @@ def beep(times, duration=0.1):
         sleep(duration)   # Keep the buzzer on for the specified duration
         buzzer.duty(0)    # Turn off the buzzer
         sleep(0.1)        # Short pause between beeps
+    
+def ErrorBeep():
+    beep(3,1)
+    
+def ServerErrorIndicator():
+    for _ in range(10):
+        led.ControlLed("red","on")
+        sleep(0.15)
+        led.ControlLed("red","off")
 
 def PlayShutterSound():
     buzzer.duty(512)  # Set volume (duty cycle)
@@ -43,7 +52,7 @@ def InitializeCamera():
         camera.quality(63)
         print("Initializing Camera SUCCESS")
     except Exception as e:
-        beep(3,1)
+        ErrorBeep()
         print("Reached Exception InitializeCamera()")
         print("Exception:", str(e))
 
@@ -53,7 +62,7 @@ def DeinitCamera():
         camera.deinit()
         print("Deinitializing Camera SUCCESS")
     except Exception as e:
-        beep(3,1)
+        ErrorBeep()
         print("Reached Exception DeinitCamera()")
         print("Exception:", str(e))
     
@@ -75,7 +84,7 @@ def TakePicture():
         floodlight.value(0)
         print("Done")
     except Exception as e:
-        beep(3,1)
+        ErrorBeep()
         print("Reached Exception TakePicture()")
         print("Exception:", str(e))
     return buf
@@ -92,17 +101,32 @@ def ConnectWifi():
     
 def CheckTrimmedResponse(tr):
     if tr == "recyclable" or tr == "Recyclable":
-        print("CTR got RECYCLABLE")
-        beep(1,0.5)
+        print("CTR: green")
+        beep(1)
+        led.ControlLed("green","on")
+        sleep(3)
+        led.ControlLed("green","off")
+        
     elif tr == "landfill" or tr == "Landfill":
-        print("CTR got LANDFILL")
-        beep(2,0.5)
+        print("CTR: red")
+        beep(1)
+        led.ControlLed("red","on")
+        sleep(3)
+        led.ControlLed("red","off")
+        
     elif tr == "compostable" or tr == "Compostable":
-        print("CTR got COMPOSTABLE")
-        beep(3,0.5)
+        print("CTR: blue")
+        beep(1)
+        led.ControlLed("blue","on")
+        sleep(3)
+        led.ControlLed("blue","off")
+        
     else:
-        print("CTR got ELSE")
-        beep(3,1)
+        ErrorBeep()
+        for _ in range(10):
+            led.ControlLed("red","on")
+            sleep(0.15)
+            led.ControlLed("red","off")
 
 # Attach interrupt
 shutterbutton.irq(trigger=Pin.IRQ_FALLING, handler=CheckPressed)
@@ -125,29 +149,44 @@ beep(3)
 # InitializeCamera()
 # image = TakePicture()
 # DeinitCamera()
+# 
 # encodedImage = GetEncodedImage(image)
 # decodedImage = GetDecodedImage(encodedImage)
-# response = api.CallApi(decodedImage)
-# trimmedResponse = api.TrimResponse(response)
-# print(trimmedResponse)
-# CheckTrimmedResponse(trimmedResponse)
+# 
+# try:
+#     response = api.CallApi(decodedImage)
+#     trimmedResponse = api.TrimResponse(response)
+#     print(trimmedResponse)
+#     CheckTrimmedResponse(trimmedResponse)
+# except Exception as e:
+#     ServerErrorBeep()
+#     print(str(e))
+# 
+# led.AllOff()
 # gc.collect()
 
+led.AllOff()
 
 while True:
     if takepic:
+        
         InitializeCamera()
         image = TakePicture()
         DeinitCamera()
-        
+
         encodedImage = GetEncodedImage(image)
         decodedImage = GetDecodedImage(encodedImage)
-        
-        response = api.CallApi(decodedImage)
-        trimmedResponse = api.TrimResponse(response)
-        print(trimmedResponse)
-        CheckTrimmedResponse(trimmedResponse)
-        
+
+        try:
+            response = api.CallApi(decodedImage)
+            trimmedResponse = api.TrimResponse(response)
+            print(trimmedResponse)
+            CheckTrimmedResponse(trimmedResponse)
+        except Exception as e:
+            ServerErrorIndicator()
+            print(str(e))
+
+        led.AllOff()
         gc.collect()
 
         takepic = False #reset
