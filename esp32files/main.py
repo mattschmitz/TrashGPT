@@ -27,8 +27,9 @@ def ErrorBeep():
 def ServerErrorIndicator():
     for _ in range(10):
         led.ControlLed("red","on")
-        sleep(0.15)
+        sleep(0.10)
         led.ControlLed("red","off")
+        sleep(0.10)
 
 def PlayShutterSound():
     buzzer.duty(512)  # Set volume (duty cycle)
@@ -47,7 +48,7 @@ def CheckPressed(pin):
 def InitializeCamera():
     print("Initializing Camera")
     try:
-        camera.init(0, format=camera.JPEG)
+        camera.init(0, format=camera.JPEG, fb_location=camera.PSRAM)
         camera.framesize(camera.FRAME_96X96)
         camera.quality(63)
         print("Initializing Camera SUCCESS")
@@ -123,10 +124,6 @@ def CheckTrimmedResponse(tr):
         
     else:
         ErrorBeep()
-        for _ in range(10):
-            led.ControlLed("red","on")
-            sleep(0.15)
-            led.ControlLed("red","off")
 
 # Attach interrupt
 shutterbutton.irq(trigger=Pin.IRQ_FALLING, handler=CheckPressed)
@@ -146,30 +143,12 @@ buzzer.freq(1000)
 # If hear three beep then good to go.
 beep(3)
 
-# InitializeCamera()
-# image = TakePicture()
-# DeinitCamera()
-# 
-# encodedImage = GetEncodedImage(image)
-# decodedImage = GetDecodedImage(encodedImage)
-# 
-# try:
-#     response = api.CallApi(decodedImage)
-#     trimmedResponse = api.TrimResponse(response)
-#     print(trimmedResponse)
-#     CheckTrimmedResponse(trimmedResponse)
-# except Exception as e:
-#     ServerErrorBeep()
-#     print(str(e))
-# 
-# led.AllOff()
-# gc.collect()
-
 led.AllOff()
 
 while True:
-    if takepic:
-        
+    user_input = input("Enter 1 to take a picture, or press Enter to do nothing: ")
+    
+    if user_input == "1":
         InitializeCamera()
         image = TakePicture()
         DeinitCamera()
@@ -188,6 +167,31 @@ while True:
 
         led.AllOff()
         gc.collect()
+        
+    else:
+        print("No action taken. Waiting for next command.")
 
-        takepic = False #reset
+# while True:
+#     if takepic:
+#         
+#         InitializeCamera()
+#         image = TakePicture()
+#         DeinitCamera()
+# 
+#         encodedImage = GetEncodedImage(image)
+#         decodedImage = GetDecodedImage(encodedImage)
+# 
+#         try:
+#             response = api.CallApi(decodedImage)
+#             trimmedResponse = api.TrimResponse(response)
+#             print(trimmedResponse)
+#             CheckTrimmedResponse(trimmedResponse)
+#         except Exception as e:
+#             ServerErrorIndicator()
+#             print(str(e))
+# 
+#         led.AllOff()
+#         gc.collect()
+# 
+#         takepic = False #reset
 
