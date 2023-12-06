@@ -30,6 +30,13 @@ def ServerErrorIndicator():
         sleep(0.10)
         led.ControlLed("red","off")
         sleep(0.10)
+        
+def LoopErrorIndicator():
+    for _ in range(5):
+        led.ControlLed("blue","on")
+        sleep(0.10)
+        led.ControlLed("blue","off")
+        sleep(0.10)
 
 def PlayShutterSound():
     buzzer.duty(512)  # Set volume (duty cycle)
@@ -48,7 +55,7 @@ def CheckPressed(pin):
 def InitializeCamera():
     print("Initializing Camera")
     try:
-        camera.init(0, format=camera.JPEG, fb_location=camera.PSRAM)
+        camera.init(0, format=camera.JPEG)
         camera.framesize(camera.FRAME_96X96)
         camera.quality(63)
         print("Initializing Camera SUCCESS")
@@ -80,9 +87,13 @@ def TakePicture():
     try:
         floodlight.value(1)
         buf = camera.capture()
+        floodlight.value(0)
+        
+        if type(buf) == bool:
+            return
+        
         PlayShutterSound()
         print("Type of captured data:", type(buf))  # Check the type of buf
-        floodlight.value(0)
         print("Done")
     except Exception as e:
         ErrorBeep()
@@ -123,7 +134,7 @@ def CheckTrimmedResponse(tr):
         led.ControlLed("blue","off")
         
     else:
-        ErrorBeep()
+        ServerErrorIndicator()
 
 # Attach interrupt
 shutterbutton.irq(trigger=Pin.IRQ_FALLING, handler=CheckPressed)
@@ -145,53 +156,69 @@ beep(3)
 
 led.AllOff()
 
-while True:
-    user_input = input("Enter 1 to take a picture, or press Enter to do nothing: ")
-    
-    if user_input == "1":
-        InitializeCamera()
-        image = TakePicture()
-        DeinitCamera()
-
-        encodedImage = GetEncodedImage(image)
-        decodedImage = GetDecodedImage(encodedImage)
-
-        try:
-            response = api.CallApi(decodedImage)
-            trimmedResponse = api.TrimResponse(response)
-            print(trimmedResponse)
-            CheckTrimmedResponse(trimmedResponse)
-        except Exception as e:
-            ServerErrorIndicator()
-            print(str(e))
-
-        led.AllOff()
-        gc.collect()
-        
-    else:
-        print("No action taken. Waiting for next command.")
-
 # while True:
-#     if takepic:
+#     user_input = input("Enter 1 to take a picture, or press Enter to do nothing: ")
+#     try:
+#         if user_input == "1":
+#             gc.collect()
+#             
+#             InitializeCamera()
+#             image = TakePicture()
+#             DeinitCamera()
+#             
+#             decodedImage = GetDecodedImage(GetEncodedImage(image))
+# 
+#             try:
+#                 response = api.CallApi(decodedImage)
+#                 trimmedResponse = api.TrimResponse(response)
+#                 print(trimmedResponse)
+#                 CheckTrimmedResponse(trimmedResponse)
+#             except Exception as e:
+#                 ServerErrorIndicator()
+#                 print(str(e))
+# 
+#             led.AllOff()
+#             gc.collect()
+#         else:
+#             print("No action taken. Waiting for next command.")
 #         
-#         InitializeCamera()
-#         image = TakePicture()
-#         DeinitCamera()
-# 
-#         encodedImage = GetEncodedImage(image)
-#         decodedImage = GetDecodedImage(encodedImage)
-# 
-#         try:
-#             response = api.CallApi(decodedImage)
-#             trimmedResponse = api.TrimResponse(response)
-#             print(trimmedResponse)
-#             CheckTrimmedResponse(trimmedResponse)
-#         except Exception as e:
-#             ServerErrorIndicator()
-#             print(str(e))
-# 
-#         led.AllOff()
+#     except Exception as e:
+#         LoopErrorIndicator()
+#         print("Exception in Loop")
+#         print(str(e))
 #         gc.collect()
-# 
 #         takepic = False #reset
+#         continue
+        
+while True:
+    try: 
+        if takepic:
+            
+            InitializeCamera()
+            image = TakePicture()
+            DeinitCamera()
+            
+            decodedImage = GetDecodedImage(GetEncodedImage(image))
+
+            try:
+                response = api.CallApi(decodedImage)
+                trimmedResponse = api.TrimResponse(response)
+                print(trimmedResponse)
+                CheckTrimmedResponse(trimmedResponse)
+            except Exception as e:
+                ServerErrorIndicator()
+                print(str(e))
+
+            led.AllOff()
+            gc.collect()
+
+            takepic = False #reset
+            
+    except Exception as e:
+        LoopErrorIndicator()
+        print("Exception in Loop")
+        print(str(e))
+        gc.collect()
+        takepic = False #reset
+        continue
 
