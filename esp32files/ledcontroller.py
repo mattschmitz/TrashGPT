@@ -1,7 +1,7 @@
 from machine import Pin
 
 redLed = Pin(2, Pin.OUT)
-greenLed = Pin(0, Pin.OUT)
+greenLed = Pin(15, Pin.OUT)
 blueLed = Pin(14, Pin.OUT)
 
 def GetState(s):
