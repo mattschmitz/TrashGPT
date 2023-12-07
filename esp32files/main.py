@@ -1,11 +1,10 @@
 import camera
-import base64
+import ubinascii
 import ledcontroller as led
 from machine import Pin, PWM
 from time import sleep
 import api
 import network
-import requests
 import gc
 
 floodlight = Pin(4, Pin.OUT)
@@ -37,6 +36,12 @@ def LoopErrorIndicator():
         sleep(0.10)
         led.ControlLed("blue","off")
         sleep(0.10)
+        
+def InitCamErrorIndicator():
+    for _ in range(5):
+        led.ControlLed("yellow","on")
+        sleep(0.10)
+        led.ControlLed("yellow","off")
 
 def PlayShutterSound():
     buzzer.duty(512)  # Set volume (duty cycle)
@@ -49,18 +54,16 @@ def PlayShutterSound():
 def CheckPressed(pin):
   global takepic
   takepic = True
-  global interrupt_pin
-  interrupt_pin = pin
   
 def InitializeCamera():
     print("Initializing Camera")
     try:
         camera.init(0, format=camera.JPEG)
-        camera.framesize(camera.FRAME_96X96)
-        camera.quality(63)
+        camera.framesize(camera.FRAME_240X240)
+        camera.quality(10)
         print("Initializing Camera SUCCESS")
     except Exception as e:
-        ErrorBeep()
+        InitCamErrorIndicator()
         print("Reached Exception InitializeCamera()")
         print("Exception:", str(e))
 
@@ -70,16 +73,19 @@ def DeinitCamera():
         camera.deinit()
         print("Deinitializing Camera SUCCESS")
     except Exception as e:
-        ErrorBeep()
         print("Reached Exception DeinitCamera()")
         print("Exception:", str(e))
     
 def GetEncodedImage(image):
-    encodedImage = base64.b64encode(image)
+    print("Encoding Image")
+    encodedImage = ubinascii.b2a_base64(image)
+    print("Encoding Image DONE")
     return encodedImage
 
 def GetDecodedImage(encoded_image):
+    print("Decoding Image")
     decodedImage = encoded_image.decode('utf-8')
+    print("Decoding Image DONE")
     return decodedImage
 
 def TakePicture():
@@ -104,12 +110,23 @@ def TakePicture():
 def ConnectWifi():
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected():
-        print('connecting to network...')
+        print('Connecting to WiFi...')
         sta_if.active(True)
         sta_if.connect('The Golden Apple', 'brendanlovesfood')
         while not sta_if.isconnected():
             pass
+    print("Connected to WiFi.")    
     print('network config:', sta_if.ifconfig())
+    
+def DisconnectWifi():
+    sta_if = network.WLAN(network.STA_IF)
+    if sta_if.isconnected():
+        print("Disconnecting from WiFi...")
+        sta_if.disconnect()
+        sta_if.active(False)  # Optionally deactivate the interface
+        print("Disconnected from WiFi.")
+    else:
+        print("WiFi is not connected.")
     
 def CheckTrimmedResponse(tr):
     if tr == "recyclable" or tr == "Recyclable":
@@ -141,10 +158,7 @@ shutterbutton.irq(trigger=Pin.IRQ_FALLING, handler=CheckPressed)
 
 # If "Device is busy", replug and hit STOP immediately.
 # This sleep is to prevent the program become "unstoppable"
-sleep(3)
-
-# Connect to WiFi
-ConnectWifi()
+sleep(1)
     
 # Initialize Buzzer later to prevent unwanted noise.
 buzzer = PWM(Pin(12))
@@ -169,10 +183,14 @@ led.AllOff()
 #             decodedImage = GetDecodedImage(GetEncodedImage(image))
 # 
 #             try:
+#                 ConnectWifi()
+#                 
 #                 response = api.CallApi(decodedImage)
 #                 trimmedResponse = api.TrimResponse(response)
 #                 print(trimmedResponse)
 #                 CheckTrimmedResponse(trimmedResponse)
+#                 
+#                 DisconnectWifi()
 #             except Exception as e:
 #                 ServerErrorIndicator()
 #                 print(str(e))
@@ -201,12 +219,18 @@ while True:
             decodedImage = GetDecodedImage(GetEncodedImage(image))
 
             try:
+                ConnectWifi()
+                
                 response = api.CallApi(decodedImage)
                 trimmedResponse = api.TrimResponse(response)
                 print(trimmedResponse)
                 CheckTrimmedResponse(trimmedResponse)
+                
+                DisconnectWifi()
+                
             except Exception as e:
                 ServerErrorIndicator()
+                takepic = False
                 print(str(e))
 
             led.AllOff()
