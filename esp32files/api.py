@@ -1,7 +1,7 @@
 import urequests
 import json
 
-OPENAI_API_KEY="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"
+OPENAI_API_KEY=""
 
 url = "https://api.openai.com/v1/chat/completions"
 
