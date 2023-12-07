@@ -1,7 +1,7 @@
-import requests
+import urequests
 import json
 
-OPENAI_API_KEY=""
+OPENAI_API_KEY="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"
 
 url = "https://api.openai.com/v1/chat/completions"
 
@@ -16,12 +16,15 @@ headers = {
 # Make the POST request
 def CallApi(decodedImage):
     try:
+        print("Calling API")
+        
         data_with_image = {
             "model": 'gpt-4-vision-preview',
             'messages': [
                 {'role': 'system', 'content': 
                     '''
-                    You are an expert at identifying different types of trash.
+                    You are an expert at identifying different types of trash. If you are unsure 
+                    please answer landfill.
                     Please respond with only "recyclable", "compostable", or "landfill"
                     '''
                 },
@@ -32,11 +35,13 @@ def CallApi(decodedImage):
                 }
             ]
         }
-        response = requests.post(url, headers=headers, json=data_with_image)
+        response = urequests.post(url, headers=headers, json=data_with_image)
     except Exception as e:
         print("Reached Exception in CallApi()")
         print(str(e))
         return
+    print("API Call Done")
+    print(str(response.content))
     return response.content
 
 def TrimResponse(resp):
@@ -55,4 +60,4 @@ def TrimResponse(resp):
     
     except ValueError as e:
         print("Error parsing JSON:", e)
-        return None
+        
